@@ -34,6 +34,10 @@ ID=0
 VM_IP=$(./util_ipam.sh -v $ID)
 SSH="ssh -i ../etc/ssh-bench.key -F ../etc/ssh-config root@${VM_IP}"
 
+drop_host_page_cache() {
+    echo 3 | sudo tee /proc/sys/vm/drop_caches
+}
+
 run_firecracker() {
     local PRE=fio-fc
 
@@ -51,6 +55,7 @@ run_firecracker() {
 
     for TEST in $TESTS; do
         echo "Running $TEST"
+        drop_host_page_cache
         ${SSH} "fio --output-format=json --output=$PRE-$TEST.json --section=$TEST fio-vm.cfg"
         ${SSH} "cat $PRE-$TEST.json" > ${RAW}/${PRE}-${TEST}.json
     done
@@ -75,6 +80,7 @@ run_cloudhv() {
 
     for TEST in $TESTS; do
         echo "Running $TEST"
+        drop_host_page_cache
         ${SSH} "fio --output-format=json --output=$PRE-$TEST.json --section=$TEST fio-vm.cfg"
         ${SSH} "cat $PRE-$TEST.json" > ${RAW}/${PRE}-${TEST}.json
     done
@@ -99,6 +105,7 @@ run_qemu() {
 
     for TEST in $TESTS; do
         echo "Running $TEST"
+        drop_host_page_cache
         ${SSH} "fio --output-format=json --output=$PRE-$TEST.json --section=$TEST fio-vm.cfg"
         ${SSH} "cat $PRE-$TEST.json" > ${RAW}/${PRE}-${TEST}.json
     done
