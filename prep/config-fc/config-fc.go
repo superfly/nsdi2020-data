@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -36,6 +37,7 @@ type Drive struct {
 	Path         string `json:"path_on_host"`
 	IsRootDevice bool   `json:"is_root_device"`
 	IsReadOnly   bool   `json:"is_read_only"`
+	IOEngine     string `json:"io_engine,omitempty"`
 }
 
 // Logger is the minimal information needed to add a logger
@@ -90,7 +92,11 @@ func fcAPI(client *http.Client, path, body string) error {
 	}
 	defer rsp.Body.Close()
 	if rsp.StatusCode < 200 || rsp.StatusCode > 299 {
-		return fmt.Errorf("Got unexpected status code %d", rsp.StatusCode)
+		b, err := io.ReadAll(rsp.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("Got unexpected status code %d: %s", rsp.StatusCode, string(b))
 	}
 	return nil
 }
@@ -107,6 +113,8 @@ func main() {
 	diskOpt := flag.String("disk", "", "Path to additional disk")
 	netOpt := flag.String("n", "", "Network configuration 'tap,tap ip,mac,vm ip,mask'")
 	logOpt := flag.String("l", "", "Logger and Metric fifos. comma separated")
+	versionOpt := flag.Int("v", 0, "Firecracker major version")
+	asyncOpt := flag.Bool("async", false, "Use async IO engine")
 
 	debugOpt := flag.Bool("d", false, "Enable debug output")
 
@@ -127,6 +135,11 @@ func main() {
 		CPUTemplate: "T2",
 		HyperThread: true,
 	}
+
+	if *versionOpt == 1 {
+		machine.HyperThread = false
+	}
+
 	config.Machine = machine
 	b, err := json.Marshal(machine)
 	if err != nil {
@@ -191,6 +204,9 @@ func main() {
 			Path:         *diskOpt,
 			IsRootDevice: false,
 			IsReadOnly:   false,
+		}
+		if *asyncOpt {
+			disk.IOEngine = "Async"
 		}
 		config.Drives = append(config.Drives, drive)
 		b, err = json.Marshal(disk)
