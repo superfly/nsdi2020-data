@@ -9,11 +9,12 @@ RUN apt update && \
         libglib2.0-dev \
         pkg-config \
         python \
-        libc6-dev-i386
+        libc6-dev-i386 \
+        curl
 
-RUN git clone git://git.qemu.org/qemu.git && \
-    cd qemu && \
-    git checkout v4.2.0
+RUN curl -L https://download.qemu.org/qemu-4.2.0.tar.bz2 | tar jxf - && \
+    mv qemu-4.2.0 qemu && \
+    cd qemu
 
 WORKDIR /qemu
 

@@ -17,7 +17,7 @@ TARGETS += ../../img/bench-ssh-vmlinuz
 TARGETS += ../../img/bench-ssh-disk.img
 
 LK := ../../bin/linuxkit
-LOOP ?= /dev/loop0
+LOOP ?= $(shell losetup -f)
 
 build: $(TARGETS)
 
@@ -85,4 +85,4 @@ boot-time.tar: boot-time.yml
 	mv $(@F) $@
 	rm bench-ssh.tar
 bench-ssh.tar: bench-ssh.yml
-	$(LK) build -format tar $<
+	$(LK) build -disable-content-trust -format tar $<
