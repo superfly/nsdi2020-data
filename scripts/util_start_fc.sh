@@ -43,6 +43,13 @@ done
 
 rm -f "$SOCK"
 
+re='^Firecracker v1'
+if [[ $($FC --version) =~ $re ]]; then
+    version=1
+else
+    version=0
+fi
+
 NETCFG=
 if [ "x$NET" != "x" ]; then
     TAP_DEV=$(./util_ipam.sh -t $ID)
@@ -79,7 +86,8 @@ else
     done
 
     # Configure the VM using the socket
-    ../bin/config-fc -s $SOCK -k ${KERNEL} -r ${ROOTFS} -c ${CORES} -m ${MEM} ${NETCFG} ${DISKCFG} ${DEBUG}
+    ../bin/config-fc -s $SOCK -k ${KERNEL} -r ${ROOTFS} -c ${CORES} -m ${MEM} ${NETCFG} ${DISKCFG} ${DEBUG} \
+		     -v "$version"
 
     wait $FC_PID || true
 fi
